@@ -1,8 +1,8 @@
 from pathlib import Path
 
 ROOT_DIR = Path(__file__).parent
-IMAGES_DIR = ROOT_DIR / "files" / "images"
-WINDOW_ICON_PATH = IMAGES_DIR / "icon.png"
+IMAGES_DIR = ROOT_DIR / 'files' / 'images'
+WINDOW_ICON_PATH = IMAGES_DIR / 'icon.png'
 
 # Sizing
 BIG_FONT_SIZE = 40
@@ -12,6 +12,6 @@ TEXT_MARGIN = 15
 MINIMUM_WIDTH = 450
 
 # Colors
-PRIMARY_COLOR = "#1e81b0"
-DARKER_PRIMARY_COLOR = "#16658a"
-DARKEST_PRIMARY_COLOR = "#115270"
+PRIMARY_COLOR = '#1e81b0'
+DARKER_PRIMARY_COLOR = '#16658a'
+DARKEST_PRIMARY_COLOR = '#115270'
