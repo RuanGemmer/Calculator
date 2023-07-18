@@ -21,7 +21,7 @@ if __name__ == "__main__":
     app.setWindowIcon(icon)
 
     # info
-    info = Info("Exemplo: 2.0 * 4.0 = 8.0")
+    info = Info("")
     window.addWidgetToVLayout(info)
 
     # Display
@@ -29,7 +29,7 @@ if __name__ == "__main__":
     window.addWidgetToVLayout(display)
 
     # Buttons Grid
-    buttonGrid = ButtonGrid(display)
+    buttonGrid = ButtonGrid(display, info)
     window.vLayout.addLayout(buttonGrid)
 
     window.adjustFixedSize()
