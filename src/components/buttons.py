@@ -20,7 +20,7 @@ class Button(QPushButton):
         self.setMinimumSize(75, 75)
 
 
-class ButtonGrid(QGridLayout):
+class ButtonGrid(QGridLayout):   
     def __init__(self,
                  display: Display,
                  info: Info,
@@ -56,8 +56,10 @@ class ButtonGrid(QGridLayout):
 
     def _makeGrid(self):
         self.display.clearPressed.connect(self._clear)
-        self.display.delPressed.connect(self.display.backspace)
-        self.display.eqPressed.connect(self._clear)
+        self.display.delPressed.connect(self._backspace)
+        self.display.eqPressed.connect(self._eq)
+        self.display.inputPressed.connect(self._insertTextToDisplay)
+        self.display.operatorPressed.connect(self._configLeftOp)
 
         for i, row in enumerate(self._gridMask):
             for j, buttonText in enumerate(row):
@@ -68,7 +70,7 @@ class ButtonGrid(QGridLayout):
                     self._configSpecialButtons(button)
 
                 self.addWidget(button, i, j)
-                slot = self._makeSlot(self._insertButtonTextToDisplay, button)
+                slot = self._makeSlot(self._insertTextToDisplay, buttonText)
                 self._connectButtonCliked(button, slot)
 
     def _connectButtonCliked(self, button, slot):
@@ -81,7 +83,7 @@ class ButtonGrid(QGridLayout):
             self._connectButtonCliked(button, self._clear)
 
         if function_ == "Back":
-            self._connectButtonCliked(button, self.display.backspace)
+            self._connectButtonCliked(button, self._backspace)
 
         if function_ == "+/-":
             self._connectButtonCliked(button, self._invertSignal)
@@ -89,35 +91,48 @@ class ButtonGrid(QGridLayout):
         if function_ in "+-/*^":
             self._connectButtonCliked(
                 button,
-                self._makeSlot(self._operatorClicked, function_)
+                self._makeSlot(self._configLeftOp, function_)
                 )
 
         if function_ == "=":
             self._connectButtonCliked(button, self._eq)
+        
+        self.display.setFocus()
 
+    @Slot()
     def _makeSlot(self, method, *args, **kwargs):
         @Slot(bool)
         def realSlot():
             method(*args, **kwargs)
         return realSlot
 
-    def _insertButtonTextToDisplay(self, button):
-        buttonText = button.text()
-        self.newDisplayValue = self.display.text() + buttonText
+    @Slot()
+    def _insertTextToDisplay(self, text):
+        self.newDisplayValue = self.display.text() + text
 
         if not isValidNumber(self.newDisplayValue):
+            self.display.setFocus()
             return
 
-        self.display.insert(buttonText)
+        self.display.insert(text)
+        self.display.setFocus()
 
+    @Slot()
     def _clear(self):
         self._left = None
         self._rigth = None
         self._operator = None
         self.equation = ''
         self.display.clear()
+        self.display.setFocus()
 
-    def _operatorClicked(self, operatorButton):
+    @Slot()
+    def _backspace(self):
+        self.display.backspace()
+        self.display.setFocus()
+
+    @Slot()
+    def _configLeftOp(self, text):
         displayText = self.display.text()
         self.display.clear()
 
@@ -128,13 +143,15 @@ class ButtonGrid(QGridLayout):
         if self._left is None:
             self._left = formatFloat(float(displayText))
 
-        self._operator = operatorButton
+        self._operator = text
         self.equation = f'{self._left} {self._operator} ??'
+        self.display.setFocus()
 
+    @Slot()
     def _eq(self):
         displayText = self.display.text()
 
-        if not isValidNumber(displayText):
+        if not isValidNumber(displayText) or self._left is None:
             self._showError("Sem valor para calcular")
             return
 
@@ -144,11 +161,13 @@ class ButtonGrid(QGridLayout):
 
         try:
             if "^" in self.equation \
-                and isinstance(self._rigth, (float | int)) \
-                    and isinstance(self._left, (float | int)):
-                result = formatFloat(float(math.pow(self._left, self._rigth)))
+                and isinstance(self._rigth, float | int) \
+                    and isinstance(self._left, float | int):
+                result = math.pow(self._left, self._rigth)
+                result = formatFloat(float(result))
             else:
-                result = formatFloat(float(eval(self.equation)))
+                result = eval(self.equation)
+                result = formatFloat(float(result))
         except ZeroDivisionError:
             self._showError("Divisão por zero")
         except OverflowError:
@@ -158,18 +177,31 @@ class ButtonGrid(QGridLayout):
         self.info.setText(f'{self.equation} = {result}')
         self._left = None
         self._rigth = None
-        self._operator = None
+        self.display.setFocus()
 
         if result == 'error':
             self._left = None
 
     def _invertSignal(self):
+        text = self.display.text()
+        if isEmpty(text):
+            self.display.setText("-")
+            self.display.setFocus()
+            return
+
+        if text == "-":
+            self.display.setText("")
+            self.display.setFocus()
+            return
+
         number = formatFloat(float(self.display.text()))
         newNumber = number * (-1)
         self.display.setText(str(newNumber))
+        self.display.setFocus()
 
     def _showError(self, text: str):
         msgBox = self.window.makeMsgbox()
         msgBox.setText(text)
         msgBox.setIcon(msgBox.Icon.Critical)
         msgBox.exec()
+        self.display.setFocus()
