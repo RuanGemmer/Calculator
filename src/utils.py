@@ -23,7 +23,10 @@ def isValidNumber(string: str) -> bool:
 
 
 def formatFloat(number: float):
-    if number.is_integer():
+    len_number = len(str(number))
+    if len_number > 10:
+        return number
+    elif number.is_integer():
         return int(number)
     else:
         return float(number)

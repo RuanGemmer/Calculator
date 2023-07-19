@@ -5,6 +5,7 @@ from utils import isNumOrDot, isEmpty, isValidNumber, formatFloat
 from .display import Display
 from .info import Info
 import math
+from .main_window import MainWindow
 
 
 class Button(QPushButton):
@@ -20,7 +21,12 @@ class Button(QPushButton):
 
 
 class ButtonGrid(QGridLayout):
-    def __init__(self, display: Display, info: Info, *args, **kwarg) -> None:
+    def __init__(self,
+                 display: Display,
+                 info: Info,
+                 window: MainWindow,
+                 *args,
+                 **kwarg) -> None:
         super().__init__(*args, **kwarg)
 
         self._gridMask = [
@@ -36,6 +42,7 @@ class ButtonGrid(QGridLayout):
         self._left = None
         self._rigth = None
         self._operator = None
+        self.window = window
         self._makeGrid()
 
     @property
@@ -71,7 +78,7 @@ class ButtonGrid(QGridLayout):
 
         if function_ == "Back":
             self._connectButtonCliked(button, self.display.backspace)
-        
+
         if function_ == "+/-":
             self._connectButtonCliked(button, self._invertSignal)
 
@@ -111,7 +118,7 @@ class ButtonGrid(QGridLayout):
         self.display.clear()
 
         if not isValidNumber(displayText) and self._left is None:
-            print("não há valor na esquerda")
+            self._showError("Você não digitou nada!")
             return
 
         if self._left is None:
@@ -124,7 +131,7 @@ class ButtonGrid(QGridLayout):
         displayText = self.display.text()
 
         if not isValidNumber(displayText):
-            print("Sem valor para calcular")
+            self._showError("Sem valor para calcular")
             return
 
         self._rigth = formatFloat(float(displayText))
@@ -139,9 +146,9 @@ class ButtonGrid(QGridLayout):
             else:
                 result = formatFloat(float(eval(self.equation)))
         except ZeroDivisionError:
-            print("Divisão por zero")
+            self._showError("Divisão por zero")
         except OverflowError:
-            print("Número muito grande")
+            self._showError("Número muito grande")
 
         self.display.setText(str(result))
         self.info.setText(f'{self.equation} = {result}')
@@ -156,3 +163,9 @@ class ButtonGrid(QGridLayout):
         number = formatFloat(float(self.display.text()))
         newNumber = number * (-1)
         self.display.setText(str(newNumber))
+
+    def _showError(self, text: str):
+        msgBox = self.window.makeMsgbox()
+        msgBox.setText(text)
+        msgBox.setIcon(msgBox.Icon.Critical)
+        msgBox.exec()
