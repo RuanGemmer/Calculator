@@ -1,9 +1,10 @@
 from PySide6.QtWidgets import QPushButton, QGridLayout
 from PySide6.QtCore import Slot
 from variables import MEDIUM_FONT_SIZE
-from utils import isNumOrDot, isEmpty, isValidNumber
+from utils import isNumOrDot, isEmpty, isValidNumber, formatFloat
 from .display import Display
 from .info import Info
+import math
 
 
 class Button(QPushButton):
@@ -23,7 +24,7 @@ class ButtonGrid(QGridLayout):
         super().__init__(*args, **kwarg)
 
         self._gridMask = [
-            ['C', '◀', '^', '/'],
+            ['C', 'Back', '^', '/'],
             ['7', '8', '9', '*'],
             ['4', '5', '6', '-'],
             ['1', '2', '3', '+'],
@@ -32,6 +33,9 @@ class ButtonGrid(QGridLayout):
         self.display = display
         self.info = info
         self._equation = ''
+        self._left = None
+        self._rigth = None
+        self._operator = None
         self._makeGrid()
 
     @property
@@ -65,6 +69,21 @@ class ButtonGrid(QGridLayout):
         if function_ == "C":
             self._connectButtonCliked(button, self._clear)
 
+        if function_ == "Back":
+            self._connectButtonCliked(button, self.display.backspace)
+        
+        if function_ == "+/-":
+            self._connectButtonCliked(button, self._invertSignal)
+
+        if function_ in "+-/*^":
+            self._connectButtonCliked(
+                button,
+                self._makeSlot(self._operatorClicked, function_)
+                )
+
+        if function_ == "=":
+            self._connectButtonCliked(button, self._eq)
+
     def _makeSlot(self, method, *args, **kwargs):
         @Slot(bool)
         def realSlot():
@@ -81,4 +100,59 @@ class ButtonGrid(QGridLayout):
         self.display.insert(buttonText)
 
     def _clear(self):
+        self._left = None
+        self._rigth = None
+        self._operator = None
+        self.equation = ''
         self.display.clear()
+
+    def _operatorClicked(self, operatorButton):
+        displayText = self.display.text()
+        self.display.clear()
+
+        if not isValidNumber(displayText) and self._left is None:
+            print("não há valor na esquerda")
+            return
+
+        if self._left is None:
+            self._left = formatFloat(float(displayText))
+
+        self._operator = operatorButton
+        self.equation = f'{self._left} {self._operator} ??'
+
+    def _eq(self):
+        displayText = self.display.text()
+
+        if not isValidNumber(displayText):
+            print("Sem valor para calcular")
+            return
+
+        self._rigth = formatFloat(float(displayText))
+        self.equation = f'{self._left} {self._operator} {self._rigth}'
+        result = 'error'
+
+        try:
+            if "^" in self.equation \
+                and isinstance(self._rigth, (float | int)) \
+                    and isinstance(self._left, (float | int)):
+                result = formatFloat(float(math.pow(self._left, self._rigth)))
+            else:
+                result = formatFloat(float(eval(self.equation)))
+        except ZeroDivisionError:
+            print("Divisão por zero")
+        except OverflowError:
+            print("Número muito grande")
+
+        self.display.setText(str(result))
+        self.info.setText(f'{self.equation} = {result}')
+        self._left = None
+        self._rigth = None
+        self._operator = None
+
+        if result == 'error':
+            self._left = None
+
+    def _invertSignal(self):
+        number = formatFloat(float(self.display.text()))
+        newNumber = number * (-1)
+        self.display.setText(str(newNumber))

@@ -20,3 +20,10 @@ def isValidNumber(string: str) -> bool:
     except ValueError:
         valid = False
     return valid
+
+
+def formatFloat(number: float):
+    if number.is_integer():
+        return int(number)
+    else:
+        return float(number)
