@@ -10,6 +10,10 @@
 Calculator developed entirely in Python 3.11 with [PySide 6](https://pypi.org/project/PySide6/).
 
 Calculator has basic functions of addition, subtraction, multiplication, division and power of positive and negative numbers.
+<br><br>
+
+`(PT-BR) Calculadora desenvolvida totalmente em Python 3.11 com PySide 6.
+Calculadora tem funções básicas de adição, subtração, multiplicação, divisão e potência de números positivos e negativos.`
 
 ## Immages
 <h4>Main</h4>
